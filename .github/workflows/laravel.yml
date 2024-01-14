@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-versions: ['7.2', '7.3', '7.4']
+        php-versions: ['8.1']
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -44,21 +44,23 @@ jobs:
           path: ${{ steps.composer-cache.outputs.dir }}
           # Use composer.json for key, if composer.lock is not committed.
           # key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/src/composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-
       - name: Install Composer dependencies
-        run: composer install --no-progress --no-suggest --prefer-dist --optimize-autoloader
+        run: composer install --working-dir=./src --no-progress --prefer-dist --optimize-autoloader
       - name: Prepare the application
         run: |
-          php -r "file_exists('.env') || copy('.env.example', '.env');"
-          php artisan key:generate
+          php -r "file_exists('./src/.env') || copy('./src/.env.example', './src/.env');"
+          php ./src/artisan key:generate
       - name: Clear Config
-        run: php artisan config:clear
+        run: php ./src/artisan config:clear
       - name: Run Migration
-        run: php artisan migrate -v
+        run: php ./src/artisan migrate -v
         env:
           DB_PORT: ${{ job.services.mysql.ports['3306'] }}
+      - name: List the test to be performed
+        run: ./src/vendor/bin/phpunit --list-tests
       - name: Test with phpunit
-        run: src/vendor/bin/phpunit --coverage-text
+        run: ./src/vendor/bin/phpunit --configuration ./src/phpunit.xml
         env:
           DB_PORT: ${{ job.services.mysql.ports['3306'] }}
