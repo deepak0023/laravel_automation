@@ -1,0 +1,8 @@
+version: "1.0"
+services:
+  php:
+    build:
+      context: .
+      dockerfile: ./Dockerfiles/php.dockerfile
+    volumes:
+      - ./src:/var/www/html:delegated
